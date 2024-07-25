@@ -1,10 +1,10 @@
-import os
+# import os
 import cv2
 import numpy as np
 from multiprocessing import Queue
 from pathlib import Path
 from itertools import chain
-import decord
+# import decord
 
 
 def image_stream(queue, imagedir, calib, stride, skip=0):
@@ -50,6 +50,7 @@ def video_stream(
     skip: int = 0,
     end: int = -1,
     assumed_fov_degrees: float = 90.0,
+    downsample: float = 0.5,
 ):
     """ video generator """
 
@@ -98,11 +99,15 @@ def video_stream(
         if len(calib) > 4:
             image = cv2.undistort(image, K, calib[4:])
 
-        image = cv2.resize(image, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+        image = cv2.resize(
+            image, None, fx=downsample, fy=downsample, interpolation=cv2.INTER_AREA
+        )
         h, w, _ = image.shape
         image = image[:h-h%16, :w-w%16]
 
-        intrinsics = np.array([fx*.5, fy*.5, cx*.5, cy*.5])
+        intrinsics = np.array(
+            [fx*downsample, fy*downsample, cx*downsample, cy*downsample]
+        )
         queue.put((t, image, intrinsics))
 
         t += 1
